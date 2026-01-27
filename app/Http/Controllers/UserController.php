@@ -20,6 +20,10 @@ class UserController
         if ($user) {
             if (Hash::check($request->pass, $user->pass)) {
 
+                $update = User::find($user->id_user);
+                $update->token = $request->token;
+                $update->save();
+
                 $result->code = 200;
                 $result->user = $user;
                 $result->text = "Correcto";
