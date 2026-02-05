@@ -35,12 +35,22 @@ class MainController
             $status = 0;
             $relay = 0;
 
+            if ($siren->signal != 0) {
+                $UserController = new UserController();
+                $UserController->sendNotifications("🔴 ".$siren->name, "La sirena " . $siren->name . " se encuentra fuera de linea");
+            }
+
         }
 
         if ($request->accion == "ONLINE"){
 
             $status = 1;
             $relay = 0;
+
+            if ($siren->signal != 1) {
+                $UserController = new UserController();
+                $UserController->sendNotifications("🟢 ".$siren->name, "La sirena " . $siren->name . " se encuentra nuevamente en linea");
+            }
 
         }
 
@@ -71,6 +81,15 @@ class MainController
         $register->cputemp = $request->cputemp;
         $register->pin18 = $request->pin;
         $register->save();
+
+        if ($request->cputemp > 70){
+
+            $siren = Siren::find($request->sirena);
+
+            $UserController = new UserController();
+            $UserController->sendNotifications("🌡️ ".$siren->name, "La sirena " . $siren->name . " está a ".$request->cputemp . " °C revisar ventilación");
+
+        }
 
         $siren = Siren::find($request->sirena);
         $siren->signal = 0;
@@ -131,7 +150,15 @@ class MainController
     {
 
         $sirens = Siren::get();
-        //$sirens = Siren::where('id_siren', '13')->get();
+        return response()->json($sirens);
+
+    }
+
+    public function get_sirens_user(Request $request)
+    {
+
+        $user = User::with('webs.sirens')->where('id_user', $request->id_user)->first();
+        $sirens = $user->webs->pluck('sirens')->flatten()->unique('id_siren')->values();
         return response()->json($sirens);
 
     }
@@ -144,10 +171,27 @@ class MainController
 
     }
 
-    public function get_historic()
+    public function get_historic(Request $request)
     {
 
-        $history = Historic::with(['user', 'siren', 'web'])->orderBy('created_at', 'desc')->get();
+        $type = User::find($request->id_user);
+
+        if ($type->level == 1){
+
+            $history = Historic::with(['user', 'siren', 'web'])->orderBy('created_at', 'desc')->get();
+                    
+        } else {
+
+            $user = User::with('webs.sirens')->where('id_user', $request->id_user)->first();
+            $webIds = $user->webs->pluck('id_web');
+            $sirenIds = $user->webs->pluck('sirens')->flatten()->pluck('id_siren')->unique();
+            $history = Historic::with(['user', 'siren', 'web'])->where(function ($q) use ($webIds, $sirenIds) {
+                $q->whereIn('id_web', $webIds)
+                ->orWhereIn('id_siren', $sirenIds);
+            })->orderBy('created_at', 'desc')->get();
+
+        }
+        
         return response()->json($history);
 
     }
@@ -185,6 +229,11 @@ class MainController
 
         $siren->last_on = $siren->activities()
             ->where('action', 'ON')
+            ->latest('created_at')
+            ->first();
+
+        $siren->last_off = $siren->activities()
+            ->where('action', 'OFF')
             ->latest('created_at')
             ->first();
 
@@ -237,6 +286,10 @@ class MainController
 
         }
 
+        $MainController = new UserController();
+        $MainController->pushToken(1, "ACTIVANDO TODO", "Se ejecutó el comando desde UMG para activar todas las sirenas municipales");
+        $MainController->pushToken(6, "ACTIVANDO TODO", "Se ejecutó el comando desde UMG para activar todas las sirenas municipales");
+
         return response()->json([
             'message' => 'Comando ON enviado a sirenas',
             'mensajes_exitosos' => $contador,
@@ -281,6 +334,10 @@ class MainController
             }
 
         }
+
+        $MainController = new UserController();
+        $MainController->pushToken(1, "APAGANDO TODO", "Se ejecutó el comando desde UMG para apagar todas las sirenas municipales");
+        $MainController->pushToken(6, "APAGANDO TODO", "Se ejecutó el comando desde UMG para apagar todas las sirenas municipales");
 
         return response()->json([
             'message' => 'Comando OFF enviado a sirenas',
@@ -347,8 +404,8 @@ class MainController
         $message = "ON";
         $contador = 0;
 
-        //$sirens = Siren::get();
-        $sirens = Siren::where('id_siren', '13')->get();
+        $sirens = Siren::get();
+        //$sirens = Siren::where('id_siren', '13')->get();
 
         foreach ($sirens as $siren) {
 
@@ -381,6 +438,9 @@ class MainController
         $history->id_user = $request->id_user;
         $history->save();
 
+        $UserController = new UserController();
+        $UserController->sendAlerts("ACTIVANDO TODO", "Se ejecutó el comando para activar todas las sirenas municipales");
+
         $result->message = 'Comando ON enviado a sirenas';
         $result->mensajes_exitosos = $contador;
 
@@ -400,8 +460,8 @@ class MainController
         $message = "OFF";
         $contador = 0;
 
-        //$sirens = Siren::get();
-        $sirens = Siren::where('id_siren', '13')->get();
+        $sirens = Siren::get();
+        //$sirens = Siren::where('id_siren', '13')->get();
         
         foreach ($sirens as $siren) {
 
@@ -434,6 +494,9 @@ class MainController
         $history->id_user = $request->id_user;
         $history->save();
 
+        $UserController = new UserController();
+        $UserController->sendAlerts("APAGANDO TODO", "Se ejecutó el comando para apagar todas las sirenas municipales", 2);
+
         $result->message = 'Comando OFF enviado a sirenas';
         $result->mensajes_exitosos = $contador;
 
@@ -453,8 +516,8 @@ class MainController
         $message = "TEST";
         $contador = 0;
 
-        //$sirens = Siren::get();
-        $sirens = Siren::where('id_siren', '13')->get();
+        $sirens = Siren::get();
+        //$sirens = Siren::where('id_siren', '13')->get();
 
         foreach ($sirens as $siren) {
 
@@ -486,6 +549,9 @@ class MainController
         $history->success = $contador;
         $history->id_user = $request->id_user;
         $history->save();
+
+        $UserController = new UserController();
+        $UserController->sendAlerts("TESTEANDO TODO", "Se corrió el test en todas las sirenas municipales");
 
         $result->message = 'Comando TEST enviado a sirenas';
         $result->mensajes_exitosos = $contador;
@@ -542,6 +608,9 @@ class MainController
         $history->id_user = $request->id_user;
         $history->save();
 
+        $UserController = new UserController();
+        $UserController->sendAlerts("ACTIVANDO: ".$web->name, "Se ejecutó el comando para activar el corredor:" . $web->name);
+
         $result->message = 'Comando ON enviado a corredor';
         $result->mensajes_exitosos = $contador;
 
@@ -596,6 +665,9 @@ class MainController
         $history->success = $contador;
         $history->id_user = $request->id_user;
         $history->save();
+
+        $UserController = new UserController();
+        $UserController->sendAlerts("APAGANDO: ".$web->name, "Se ejecutó el comando para apagar el corredor:" . $web->name, 2);
 
         $result->message = 'Comando OFF enviado a corredor';
         $result->mensajes_exitosos = $contador;
@@ -652,6 +724,9 @@ class MainController
         $history->id_user = $request->id_user;
         $history->save();
 
+        $UserController = new UserController();
+        $UserController->sendAlerts("TEST: ".$web->name, "Se corrió el test en el corredor:" . $web->name);
+
         $result->message = 'Comando TEST enviado a corredor';
         $result->mensajes_exitosos = $contador;
 
@@ -683,22 +758,33 @@ class MainController
         $mqtt = new MqttClient($server, $port, $clientId, MqttClient::MQTT_3_1);
 
         try {
+
             $mqtt->connect($connectionSettings, true);
             $mqtt->publish($topic, $message, 1);
             $mqtt->disconnect();
 
             $result->success = true;
             $success = 1;
+
         } catch (\Exception $e) {
+
             $result = $e->getMessage();
             $success = 0;
+
         } finally {
+
             $history = new Historic();
             $history->action = $message;
             $history->success = $success;
             $history->id_siren = $siren;
             $history->id_user = $request->id_user;
             $history->save();
+
+            $name = Siren::find($siren);
+
+            $UserController = new UserController();
+            $UserController->sendAlerts("ACTIVANDO: ".$name->name, "Se ejecutó el comando para activar la sirena:" . $name->name);
+
         }
 
         return response()->json($result);
@@ -729,22 +815,33 @@ class MainController
         $mqtt = new MqttClient($server, $port, $clientId, MqttClient::MQTT_3_1);
 
         try {
+
             $mqtt->connect($connectionSettings, true);
             $mqtt->publish($topic, $message, 1);
             $mqtt->disconnect();
 
             $result->success = true;
             $success = 1;
+
         } catch (\Exception $e) {
+
             $result = $e->getMessage();
             $success = 0;
+
         } finally {
+
             $history = new Historic();
             $history->action = $message;
             $history->success = $success;
             $history->id_siren = $siren;
             $history->id_user = $request->id_user;
             $history->save();
+
+            $name = Siren::find($siren);
+
+            $UserController = new UserController();
+            $UserController->sendAlerts("APAGANDO: ".$name->name, "Se ejecutó el comando para apagar la sirena:" . $name->name, 2);
+
         }
 
         return response()->json($result);
@@ -775,22 +872,33 @@ class MainController
         $mqtt = new MqttClient($server, $port, $clientId, MqttClient::MQTT_3_1);
 
         try {
+
             $mqtt->connect($connectionSettings, true);
             $mqtt->publish($topic, $message, 1);
             $mqtt->disconnect();
 
             $result->success = true;
             $success = 1;
+
         } catch (\Exception $e) {
+
             $result = $e->getMessage();
             $success = 0;
+
         } finally {
+
             $history = new Historic();
             $history->action = $message;
             $history->success = $success;
             $history->id_siren = $siren;
             $history->id_user = $request->id_user;
             $history->save();
+
+            $name = Siren::find($siren);
+
+            $UserController = new UserController();
+            $UserController->sendAlerts("TEST: ".$name->name, "Se corrió el test en la sirena:" . $name->name);
+
         }
 
         return response()->json($result);

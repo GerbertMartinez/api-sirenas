@@ -10,6 +10,7 @@ use App\Http\Controllers\WebController;
 Route::post('/login', [UserController::class, 'login']);
 Route::get('/hash', [UserController::class, 'hash']);
 Route::post('/change', [UserController::class, 'change']);
+Route::get('/test_token', [UserController::class, 'test_token']);
 
 /* WRITE */
 Route::post('/register_activity', [MainController::class, 'register_activity']);
@@ -19,8 +20,9 @@ Route::post('/register_info', [MainController::class, 'register_info']);
 Route::get('/get_main_data', [MainController::class, 'get_main_data']);
 Route::post('/get_data', [MainController::class, 'get_data']);
 Route::get('/get_sirens', [MainController::class, 'get_sirens']);
+Route::post('/get_sirens_user', [MainController::class, 'get_sirens_user']);
 Route::get('/get_activities', [MainController::class, 'get_activities']);
-Route::get('/get_historic', [MainController::class, 'get_historic']);
+Route::post('/get_historic', [MainController::class, 'get_historic']);
 Route::get('/get_webs', [MainController::class, 'get_webs']);
 Route::post('/get_web', [MainController::class, 'get_web']);
 Route::post('/get_siren', [MainController::class, 'get_siren']);

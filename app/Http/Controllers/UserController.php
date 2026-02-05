@@ -116,4 +116,161 @@ class UserController
 
     }
 
+    public function test_token()
+    {
+
+        $user = User::find(6);
+
+        echo $user->token;
+
+        $data = [
+            "to" => $user->token,
+            "sound" => "alerta",
+            "title" => "🚨 Test de notificación",
+            "body" => "Las notificaciones fueron configuradas exitosamente",
+            "priority" => "high",
+            "channelId" => "alerta_sirenap",
+            "data" => [
+                "type" => "sismo"
+            ]
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/send");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json",
+            "Accept: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        echo $response;
+
+    }
+
+    public function pushToken($id_user, $title, $text, $type = 1)
+    {
+
+        $user = User::find($id_user);
+
+        $data = [
+            "to" => $user->token,
+            "sound" => $type == 1 ? "alerta" : "default",
+            "title" => "🚨 ".$title,
+            "body" => $text,
+            "priority" => "high",
+            "channelId" => $type == 1 ? "alerta_sirenap" : "default",
+            "data" => [
+                "type" => "sismo"
+            ]
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/send");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json",
+            "Accept: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        echo $response;
+    }
+
+    public function sendAlerts($title, $text, $type = 1)
+    {
+
+        $users = User::where('alerts',1)->get();
+
+        if ($users) {
+
+            foreach ($users as $user) {
+
+                $data = [
+                    "to" => $user->token,
+                    "sound" => $type == 1 ? "alerta" : "default",
+                    "title" => "🚨 ".$title,
+                    "body" => $text,
+                    "priority" => "high",
+                    "channelId" => $type == 1 ? "alerta_sirenap" : "default",
+                    "data" => [
+                        "type" => "sismo"
+                    ]
+                ];
+
+                $ch = curl_init();
+
+                curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/send");
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    "Content-Type: application/json",
+                    "Accept: application/json"
+                ]);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+                $response = curl_exec($ch);
+                curl_close($ch);
+
+                echo $response;
+
+            }
+
+        }
+
+    }
+
+    public function sendNotifications($title, $text)
+    {
+
+        $users = User::where('notifications',1)->get();
+
+        if ($users) {
+
+            foreach ($users as $user) {
+
+                $data = [
+                    "to" => $user->token,
+                    "sound" => "default",
+                    "title" => $title,
+                    "body" => $text,
+                    "priority" => "high",
+                    "channelId" => "default",
+                    "data" => [
+                        "type" => "sismo"
+                    ]
+                ];
+
+                $ch = curl_init();
+
+                curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/send");
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    "Content-Type: application/json",
+                    "Accept: application/json"
+                ]);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+                $response = curl_exec($ch);
+                curl_close($ch);
+
+                echo $response;
+
+            }
+
+        }
+
+    }
+
 }
