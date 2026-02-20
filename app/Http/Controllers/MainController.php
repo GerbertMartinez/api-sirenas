@@ -35,7 +35,7 @@ class MainController
             $status = 0;
             $relay = 0;
 
-            if ($siren->signal != 0) {
+            if ($siren->signal != 0 && $siren->notifications == 1) {
                 $UserController = new UserController();
                 $UserController->sendNotifications("🔴 ".$siren->name, "La sirena " . $siren->name . " se encuentra fuera de linea");
             }
@@ -47,7 +47,7 @@ class MainController
             $status = 1;
             $relay = 0;
 
-            if ($siren->signal != 1) {
+            if ($siren->signal != 1 && $siren->notifications == 1) {
                 $UserController = new UserController();
                 $UserController->sendNotifications("🟢 ".$siren->name, "La sirena " . $siren->name . " se encuentra nuevamente en linea");
             }

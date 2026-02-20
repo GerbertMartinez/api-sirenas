@@ -116,10 +116,33 @@ class UserController
 
     }
 
+    public function test_receipt()
+    {
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, "https://exp.host/--/api/v2/push/getReceipts");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json",
+            "Accept: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            "ids" => ["019c3394-964d-76c3-b656-1e4d0d71b897"]
+        ]));
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        echo $response;
+
+    }
+
     public function test_token()
     {
 
-        $user = User::find(6);
+        $user = User::find(1);
 
         echo $user->token;
 

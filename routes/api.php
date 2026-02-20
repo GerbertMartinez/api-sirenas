@@ -11,6 +11,7 @@ Route::post('/login', [UserController::class, 'login']);
 Route::get('/hash', [UserController::class, 'hash']);
 Route::post('/change', [UserController::class, 'change']);
 Route::get('/test_token', [UserController::class, 'test_token']);
+Route::get('/test_receipt', [UserController::class, 'test_receipt']);
 
 /* WRITE */
 Route::post('/register_activity', [MainController::class, 'register_activity']);
